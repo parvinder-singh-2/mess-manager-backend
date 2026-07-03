@@ -266,3 +266,26 @@ def update_customer_account(
     db.refresh(existing_customer)
 
     return existing_customer
+
+@router.delete('/{id}')
+def delete_customer(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)):
+
+    customer = (
+            db.query(models.Customer)
+            .filter(models.Customer.id == id)
+            .first()
+        )
+
+    if not customer:
+        raise HTTPException(
+            status_code = 404,
+            detail = "No Customer Found"
+        )
+
+    db.delete(customer)
+    db.commit()
+
+    return {"message": "Customer deleted successfully"}
