@@ -242,6 +242,7 @@ def update_customer_account(
     current_user: models.User = Depends(get_current_user)):
 
     # Check if customer exists
+    print(account)
     existing_customer = (
         db.query(models.CustomerAccount)
         .filter(models.CustomerAccount.customer_id == id)
