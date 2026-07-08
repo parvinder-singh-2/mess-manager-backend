@@ -13,35 +13,35 @@ router = APIRouter(
     tags = ["Meal Transaction details"]
 )
 
-@router.post("/", response_model = MealTransactionResponse)
+@router.post("/", response_model=MealTransactionResponse)
 def create_meal_transaction(
     meal_transaction: MealTransactionCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)):
+    current_user: models.User = Depends(get_current_user)
+):
     try:
         new_transaction = models.MealTransaction(
-            customer_id = meal_transaction.customer_id,
-            meal_type = meal_transaction.meal_type,
-            quantity = meal_transaction.quantity,
-            meal_rate = meal_transaction.meal_rate,
-            total_amount = meal_transaction.total_amount,
-            service_type = meal_transaction.service_type,
-            is_delivered = meal_transaction.is_delivered
+            customer_id=meal_transaction.customer_id,
+            meal_type=meal_transaction.meal_type,
+            quantity=meal_transaction.quantity,
+            total_amount=meal_transaction.total_amount,
+            service_type=meal_transaction.service_type,
+            is_delivered=meal_transaction.is_delivered,
         )
+
+        db.add(new_transaction)
+        db.commit()
+        db.refresh(new_transaction)
+
+        return new_transaction
 
     except Exception as e:
         db.rollback()
-        print(e)  # or use logging
+        print(repr(e))
         raise HTTPException(
             status_code=500,
-            detail="Failed to register meal"
-    )
-
-    db.add(new_transaction)
-    db.commit()
-    db.refresh(new_transaction)
-
-    return new_transaction
+            detail=str(e)
+        )
 
 @router.get("/", response_model = List[MealTransactionResponse])
 def get_all_meal_transactions(
