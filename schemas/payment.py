@@ -20,8 +20,10 @@ class PaymentSummary(BaseModel):
 
 class PaymentResponse(BaseModel):
     id: int
+    customer_id: int
     payment_amount: float
     meals_purchased: int
+    payment_type: str
 
     class Config:
         from_attributes = True
