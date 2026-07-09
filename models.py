@@ -71,17 +71,29 @@ class Payment(Base):
 class MealTransaction(Base):
     __tablename__ = "meal_transactions"
 
-    id = Column(Integer, primary_key = True, index = True)
-    customer_id = Column(Integer, ForeignKey("customers.id"), nullable = False)
-    meal_type = Column(Enum("LUNCH", "DINNER", name = "meal_type"), nullable = False)
-    quantity = Column(Integer, nullable = False)
-    total_amount = Column(Numeric(10, 2), nullable = False)
-    service_type = Column(Enum("DELIVERY", "DINEIN", 'TAKEOUT', name = 'service_type'), nullable = False)
-    is_delivered = Column(Boolean, default = False)
+    id = Column(Integer, primary_key=True, index=True)
+    customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False)
+
+    meal_type = Column(
+        Enum("LUNCH", "DINNER", name="meal_type"),
+        nullable=False
+    )
+
+    quantity = Column(Integer, nullable=False)
+
+    meal_rate = Column(Numeric(10, 2), nullable=False)   # <-- Add this
+
+    total_amount = Column(Numeric(10, 2), nullable=False)
+
+    service_type = Column(
+        Enum("DELIVERY", "DINEIN", "TAKEOUT", name="service_type"),
+        nullable=False
+    )
+    is_delivered = Column(Boolean, default=False)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     deleted_at = Column(DateTime(timezone=True), nullable=True)
 
-    #Relationships
     customer = relationship("Customer", back_populates="meal_transactions")
 
