@@ -9,6 +9,7 @@ class MealTransactionCreate(BaseModel):
     service_type: str
     is_delivered: bool
 
+
 class MealTransactionUpdate(BaseModel):
     customer_id: int
     meal_type: str
@@ -17,6 +18,7 @@ class MealTransactionUpdate(BaseModel):
     total_amount: float
     service_type: str
     is_delivered: bool
+
 
 class MealTransactionResponse(BaseModel):
     id: int

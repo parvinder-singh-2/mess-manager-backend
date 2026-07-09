@@ -24,6 +24,7 @@ def create_meal_transaction(
             customer_id=meal_transaction.customer_id,
             meal_type=meal_transaction.meal_type,
             quantity=meal_transaction.quantity,
+            meal_rate=meal_transaction.meal_rate,
             total_amount=meal_transaction.total_amount,
             service_type=meal_transaction.service_type,
             is_delivered=meal_transaction.is_delivered,
@@ -95,7 +96,6 @@ def update_meal_transaction(
     existing_transaction.total_amount = meal_transaction.total_amount
     existing_transaction.service_type = meal_transaction.service_type
     existing_transaction.is_delivered = meal_transaction.is_delivered
-
     db.commit()
     db.refresh(existing_transaction)
 
@@ -168,7 +168,7 @@ def get_delivery_meal_transaction_for_date(
     current_user: models.User = Depends(get_current_user)):
     meal_transactions = (
         db.query(models.MealTransaction)
-        .filter(models.MealTransaction.created_at == date)
+        .filter(func.date(models.MealTransaction.created_at) == date)
         .filter(models.MealTransaction.service_type == "DELIVERY")
         .all()
     )

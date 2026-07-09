@@ -81,7 +81,7 @@ class MealTransaction(Base):
 
     quantity = Column(Integer, nullable=False)
 
-    meal_rate = Column(Numeric(10, 2), nullable=False)   # <-- Add this
+    meal_rate = Column(Numeric(10, 2), nullable=False)
 
     total_amount = Column(Numeric(10, 2), nullable=False)
 
