@@ -24,6 +24,7 @@ class PaymentResponse(BaseModel):
     payment_amount: float
     meals_purchased: int
     payment_type: str
+    notes: str
 
     class Config:
         from_attributes = True
