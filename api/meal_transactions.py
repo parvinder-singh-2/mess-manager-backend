@@ -94,6 +94,7 @@ def update_meal_transaction(
     existing_transaction.meal_rate = meal_transaction.meal_rate
     existing_transaction.total_amount = meal_transaction.total_amount
     existing_transaction.service_type = meal_transaction.service_type
+    existing_transaction.is_delivered = meal_transaction.is_delivered
 
     db.commit()
     db.refresh(existing_transaction)

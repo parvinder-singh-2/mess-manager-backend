@@ -13,8 +13,10 @@ class MealTransactionUpdate(BaseModel):
     customer_id: int
     meal_type: str
     quantity: int
+    meal_rate: float
     total_amount: float
     service_type: str
+    is_delivered: bool
 
 class MealTransactionResponse(BaseModel):
     id: int
