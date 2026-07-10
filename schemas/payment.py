@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from datetime import datetime
 
 class PaymentCreate(BaseModel):
     customer_id: int
@@ -25,6 +26,7 @@ class PaymentResponse(BaseModel):
     meals_purchased: int
     payment_type: str
     notes: str
+    created_at: datetime
 
     class Config:
         from_attributes = True

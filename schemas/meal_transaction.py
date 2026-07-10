@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from datetime import datetime
 
 class MealTransactionCreate(BaseModel):
     customer_id: int
@@ -29,6 +30,7 @@ class MealTransactionResponse(BaseModel):
     total_amount: float
     service_type: str
     is_delivered: bool
+    created_at: datetime
 
     class Config:
         from_attributes = True
