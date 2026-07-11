@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+import traceback
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import func
@@ -7,12 +8,12 @@ from sqlalchemy.orm import Session
 from database import get_db
 from schemas.dashboard import DashboardResponse
 
-# Import your models
-from models import Customer
-from models import Payment
-from models import MealTransaction
-from models import CustomerAccount
-import traceback
+from models import (
+    Customer,
+    CustomerAccount,
+    MealTransaction,
+    Payment,
+)
 
 router = APIRouter(
     prefix="/dashboard",
@@ -22,14 +23,13 @@ router = APIRouter(
 
 @router.get("", response_model=DashboardResponse)
 def get_dashboard(db: Session = Depends(get_db)):
-
     try:
-            # EVERYTHING currently inside get_dashboard()
+
         today = date.today()
 
-        # ==========================================================
+        # =====================================================
         # Stats
-        # ==========================================================
+        # =====================================================
 
         total_customers = db.query(Customer).count()
 
@@ -60,52 +60,53 @@ def get_dashboard(db: Session = Depends(get_db)):
             .scalar()
         )
 
-        # ==========================================================
-        # Revenue Chart (Last 7 Days)
-        # ==========================================================
+        # =====================================================
+        # Revenue Chart
+        # =====================================================
 
         revenue_chart = []
 
         for i in range(6, -1, -1):
+
             day = today - timedelta(days=i)
 
             amount = (
-                db.query(func.coalesce(func.sum(Payment.amount), 0))
-                .filter(func.date(Payment.created_at) == day)
+                db.query(func.coalesce(func.sum(Payment.payment_amount), 0))
+                .filter(func.date(Payment.payment_datetime) == day)
                 .scalar()
             )
 
             revenue_chart.append(
                 {
                     "label": day.strftime("%a"),
-                    "amount": amount,
+                    "amount": float(amount or 0),
                 }
             )
 
-        # ==========================================================
+        # =====================================================
         # Meal Distribution
-        # ==========================================================
+        # =====================================================
 
         meal_distribution_query = (
             db.query(
-                MealTransaction.service_type,
-                func.count(MealTransaction.id),
+                MealTransaction.meal_type,
+                func.sum(MealTransaction.quantity),
             )
-            .group_by(MealTransaction.service_type)
+            .group_by(MealTransaction.meal_type)
             .all()
         )
 
         meal_distribution = [
             {
                 "name": meal,
-                "value": count,
+                "value": qty,
             }
-            for meal, count in meal_distribution_query
+            for meal, qty in meal_distribution_query
         ]
 
-        # ==========================================================
+        # =====================================================
         # Payment Methods
-        # ==========================================================
+        # =====================================================
 
         payment_methods_query = (
             db.query(
@@ -118,15 +119,15 @@ def get_dashboard(db: Session = Depends(get_db)):
 
         payment_methods = [
             {
-                "name": method,
-                "value": amount,
+                "name": payment_type,
+                "value": float(amount or 0),
             }
-            for method, amount in payment_methods_query
+            for payment_type, amount in payment_methods_query
         ]
 
-        # ==========================================================
+        # =====================================================
         # Today's Deliveries
-        # ==========================================================
+        # =====================================================
 
         deliveries = (
             db.query(MealTransaction)
@@ -145,7 +146,7 @@ def get_dashboard(db: Session = Depends(get_db)):
                 "customerId": delivery.customer.id,
                 "customer": delivery.customer.customer_name,
                 "address": delivery.customer.address,
-                "meal": delivery.service_type,
+                "meal": delivery.meal_type,
                 "status": (
                     "Delivered"
                     if delivery.is_delivered
@@ -155,14 +156,14 @@ def get_dashboard(db: Session = Depends(get_db)):
             for delivery in deliveries
         ]
 
-        # ==========================================================
+        # =====================================================
         # Recent Payments
-        # ==========================================================
+        # =====================================================
 
         payments = (
             db.query(Payment)
             .join(Customer)
-            .order_by(Payment.created_at.desc())
+            .order_by(Payment.payment_datetime.desc())
             .limit(10)
             .all()
         )
@@ -171,23 +172,23 @@ def get_dashboard(db: Session = Depends(get_db)):
             {
                 "id": payment.id,
                 "customerId": payment.customer.id,
-                "customer": payment.customer.name,
-                "amount": payment.payment_amount,
+                "customer": payment.customer.customer_name,
+                "amount": float(payment.payment_amount),
                 "method": payment.payment_type,
                 "time": payment.payment_datetime.strftime("%I:%M %p"),
             }
             for payment in payments
         ]
 
-        # ==========================================================
-        # Final Response
-        # ==========================================================
+        # =====================================================
+        # Response
+        # =====================================================
 
         return {
             "stats": {
                 "totalCustomers": total_customers,
                 "mealsServedToday": meals_served_today,
-                "todayRevenue": today_revenue,
+                "todayRevenue": float(today_revenue or 0),
                 "pendingDeliveries": pending_deliveries,
                 "outstandingBalance": outstanding_balance,
             },
@@ -205,7 +206,6 @@ def get_dashboard(db: Session = Depends(get_db)):
             },
         }
 
-
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
-        raise e
+        raise
