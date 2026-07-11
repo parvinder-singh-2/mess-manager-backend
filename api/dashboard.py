@@ -7,7 +7,7 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=DashboardResponse)
+@router.get("", response_model=DashboardResponse)
 def get_dashboard():
 
     return {
