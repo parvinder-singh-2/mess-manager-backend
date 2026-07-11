@@ -31,23 +31,24 @@ def get_dashboard(db: Session = Depends(get_db)):
 
     meals_served_today = (
         db.query(func.coalesce(func.sum(MealTransaction.quantity), 0))
-        .filter(MealTransaction.date == today)
+        .filter(func.date(MealTransaction.created_at) == today)
         .scalar()
     )
 
     today_revenue = (
         db.query(func.coalesce(func.sum(Payment.amount), 0))
-        .filter(func.date(Payment.payment_date) == today)
+        .func.date(MealTransaction.created_at) == today
         .scalar()
     )
 
     pending_deliveries = (
-        # db.query(TiffinTransaction)
-        # .filter(
-        #     TiffinTransaction.delivery_date == today,
-        #     TiffinTransaction.status == "Pending",
-        # )
-        # .count()
+        db.query(MealTransaction)
+        .filter(
+            func.date(MealTransaction.created_at) == today,
+            MealTransaction.service_type == "DELIVERY",
+            MealTransaction.is_delivered == False,
+        )
+        .count()
     )
 
     outstanding_balance = (
@@ -66,7 +67,7 @@ def get_dashboard(db: Session = Depends(get_db)):
 
         amount = (
             db.query(func.coalesce(func.sum(Payment.amount), 0))
-            .filter(func.date(Payment.payment_date) == day)
+            .filter(func.date(Payment.created_at) == day)
             .scalar()
         )
 
@@ -124,11 +125,14 @@ def get_dashboard(db: Session = Depends(get_db)):
     # ==========================================================
 
     deliveries = (
-        # db.query(TiffinTransaction)
-        # .join(Customer)
-        # .filter(TiffinTransaction.delivery_date == today)
-        # .limit(10)
-        # .all()
+        db.query(MealTransaction)
+        .join(Customer)
+        .filter(
+            func.date(MealTransaction.created_at) == today,
+            MealTransaction.service_type == "DELIVERY",
+        )
+        .limit(10)
+        .all()
     )
 
     today_deliveries = [
@@ -150,7 +154,7 @@ def get_dashboard(db: Session = Depends(get_db)):
     payments = (
         db.query(Payment)
         .join(Customer)
-        .order_by(Payment.payment_date.desc())
+        .order_by(Payment.created_at.desc())
         .limit(10)
         .all()
     )
@@ -162,7 +166,7 @@ def get_dashboard(db: Session = Depends(get_db)):
             "customer": payment.customer.name,
             "amount": payment.amount,
             "method": payment.method,
-            "time": payment.payment_date.strftime("%I:%M %p"),
+            "time": payment.created_at.strftime("%I:%M %p"),
         }
         for payment in payments
     ]
