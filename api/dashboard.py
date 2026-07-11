@@ -40,8 +40,8 @@ def get_dashboard(db: Session = Depends(get_db)):
         )
 
         today_revenue = (
-            db.query(func.coalesce(func.sum(Payment.amount), 0))
-            .filter(func.date(Payment.created_at) == today)
+            db.query(func.coalesce(func.sum(Payment.payment_amount), 0))
+            .filter(func.date(Payment.payment_datetime) == today)
             .scalar()
         )
 
@@ -56,7 +56,7 @@ def get_dashboard(db: Session = Depends(get_db)):
         )
 
         outstanding_balance = (
-            db.query(func.coalesce(func.sum(CustomerAccount.balance), 0))
+            db.query(func.coalesce(func.sum(CustomerAccount.meal_balance), 0))
             .scalar()
         )
 
@@ -109,10 +109,10 @@ def get_dashboard(db: Session = Depends(get_db)):
 
         payment_methods_query = (
             db.query(
-                Payment.method,
-                func.sum(Payment.amount),
+                Payment.payment_type,
+                func.sum(Payment.payment_amount),
             )
-            .group_by(Payment.method)
+            .group_by(Payment.payment_type)
             .all()
         )
 
@@ -143,10 +143,14 @@ def get_dashboard(db: Session = Depends(get_db)):
             {
                 "id": delivery.id,
                 "customerId": delivery.customer.id,
-                "customer": delivery.customer.name,
+                "customer": delivery.customer.customer_name,
                 "address": delivery.customer.address,
                 "meal": delivery.service_type,
-                "status": delivery.status,
+                "status": (
+                    "Delivered"
+                    if delivery.is_delivered
+                    else "Pending"
+                ),
             }
             for delivery in deliveries
         ]
@@ -168,9 +172,9 @@ def get_dashboard(db: Session = Depends(get_db)):
                 "id": payment.id,
                 "customerId": payment.customer.id,
                 "customer": payment.customer.name,
-                "amount": payment.amount,
-                "method": payment.method,
-                "time": payment.created_at.strftime("%I:%M %p"),
+                "amount": payment.payment_amount,
+                "method": payment.payment_type,
+                "time": payment.payment_datetime.strftime("%I:%M %p"),
             }
             for payment in payments
         ]
