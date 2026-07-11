@@ -9,8 +9,20 @@ from models.payment import Payment
 from models.meal_transaction import MealTransaction
 from models.tiffin_transaction import TiffinTransaction
 
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
-def get_dashboard_data(db: Session):
+from database import get_db
+from schemas.dashboard import DashboardResponse
+
+router = APIRouter(
+    prefix="/dashboard",
+    tags=["Dashboard"],
+)
+
+
+@router.get("", response_model=DashboardResponse)
+def get_dashboard(db: Session = Depends(get_db)):
     today = date.today()
 
     # -------------------------
