@@ -1,100 +1,184 @@
-from fastapi import APIRouter
-from schemas.dashboard import DashboardResponse
+from datetime import date, timedelta
 
-router = APIRouter(
-    prefix="/dashboard",
-    tags=["Dashboard"]
-)
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
+from models.customer import Customer
+from models.customer_account import CustomerAccount
+from models.payment import Payment
+from models.meal_transaction import MealTransaction
+from models.tiffin_transaction import TiffinTransaction
 
 
-@router.get("", response_model=DashboardResponse)
-def get_dashboard():
+def get_dashboard_data(db: Session):
+    today = date.today()
+
+    # -------------------------
+    # Stats
+    # -------------------------
+
+    total_customers = db.query(Customer).count()
+
+    meals_served_today = (
+        db.query(func.coalesce(func.sum(MealTransaction.quantity), 0))
+        .filter(MealTransaction.date == today)
+        .scalar()
+    )
+
+    today_revenue = (
+        db.query(func.coalesce(func.sum(Payment.amount), 0))
+        .filter(func.date(Payment.payment_date) == today)
+        .scalar()
+    )
+
+    pending_deliveries = (
+        db.query(TiffinTransaction)
+        .filter(
+            TiffinTransaction.delivery_date == today,
+            TiffinTransaction.status == "Pending",
+        )
+        .count()
+    )
+
+    outstanding_balance = (
+        db.query(func.coalesce(func.sum(CustomerAccount.balance), 0))
+        .scalar()
+    )
+
+    # -------------------------
+    # Revenue Chart (Last 7 Days)
+    # -------------------------
+
+    revenue_chart = []
+
+    for i in range(6, -1, -1):
+        day = today - timedelta(days=i)
+
+        amount = (
+            db.query(func.coalesce(func.sum(Payment.amount), 0))
+            .filter(func.date(Payment.payment_date) == day)
+            .scalar()
+        )
+
+        revenue_chart.append(
+            {
+                "label": day.strftime("%a"),
+                "amount": amount,
+            }
+        )
+
+    # -------------------------
+    # Meal Distribution
+    # -------------------------
+
+    meal_distribution_query = (
+        db.query(
+            MealTransaction.meal_type,
+            func.count(MealTransaction.id),
+        )
+        .group_by(MealTransaction.meal_type)
+        .all()
+    )
+
+    meal_distribution = [
+        {
+            "name": meal,
+            "value": count,
+        }
+        for meal, count in meal_distribution_query
+    ]
+
+    # -------------------------
+    # Payment Methods
+    # -------------------------
+
+    payment_methods_query = (
+        db.query(
+            Payment.method,
+            func.sum(Payment.amount),
+        )
+        .group_by(Payment.method)
+        .all()
+    )
+
+    payment_methods = [
+        {
+            "name": method,
+            "value": amount,
+        }
+        for method, amount in payment_methods_query
+    ]
+
+    # -------------------------
+    # Today's Deliveries
+    # -------------------------
+
+    deliveries = (
+        db.query(TiffinTransaction)
+        .join(Customer)
+        .filter(TiffinTransaction.delivery_date == today)
+        .limit(10)
+        .all()
+    )
+
+    today_deliveries = [
+        {
+            "id": delivery.id,
+            "customerId": delivery.customer.id,
+            "customer": delivery.customer.name,
+            "address": delivery.customer.address,
+            "meal": delivery.meal_type,
+            "status": delivery.status,
+        }
+        for delivery in deliveries
+    ]
+
+    # -------------------------
+    # Recent Payments
+    # -------------------------
+
+    payments = (
+        db.query(Payment)
+        .join(Customer)
+        .order_by(Payment.payment_date.desc())
+        .limit(10)
+        .all()
+    )
+
+    recent_payments = [
+        {
+            "id": payment.id,
+            "customerId": payment.customer.id,
+            "customer": payment.customer.name,
+            "amount": payment.amount,
+            "method": payment.method,
+            "time": payment.payment_date.strftime("%I:%M %p"),
+        }
+        for payment in payments
+    ]
+
+    # -------------------------
+    # Final Response
+    # -------------------------
 
     return {
         "stats": {
-            "totalCustomers": 128,
-            "mealsServedToday": 356,
-            "todayRevenue": 18560,
-            "pendingDeliveries": 18,
-            "outstandingBalance": 34250,
+            "totalCustomers": total_customers,
+            "mealsServedToday": meals_served_today,
+            "todayRevenue": today_revenue,
+            "pendingDeliveries": pending_deliveries,
+            "outstandingBalance": outstanding_balance,
         },
-
         "charts": {
-
             "revenue": {
                 "period": "week",
-                "data": [
-                    {"label": "Mon", "amount": 8200},
-                    {"label": "Tue", "amount": 15200},
-                    {"label": "Wed", "amount": 12100},
-                    {"label": "Thu", "amount": 21000},
-                    {"label": "Fri", "amount": 16100},
-                    {"label": "Sat", "amount": 14100},
-                    {"label": "Sun", "amount": 17800},
-                ]
+                "data": revenue_chart,
             },
-
-            "mealDistribution": [
-                {
-                    "name": "Lunch",
-                    "value": 1286
-                },
-                {
-                    "name": "Dinner",
-                    "value": 1091
-                }
-            ],
-
-            "paymentMethods": [
-                {
-                    "name": "CASH",
-                    "value": 18500
-                },
-                {
-                    "name": "ONLINE",
-                    "value": 42750
-                }
-            ]
+            "mealDistribution": meal_distribution,
+            "paymentMethods": payment_methods,
         },
-
         "tables": {
-
-            "todayDeliveries": [
-                {
-                    "id": 1,
-                    "customerId": 5,
-                    "customer": "Rahul Sharma",
-                    "address": "Vijay Nagar",
-                    "meal": "Lunch",
-                    "status": "Delivered"
-                },
-                {
-                    "id": 2,
-                    "customerId": 7,
-                    "customer": "Anjali Verma",
-                    "address": "Scheme 54",
-                    "meal": "Dinner",
-                    "status": "Pending"
-                }
-            ],
-
-            "recentPayments": [
-                {
-                    "id": 10,
-                    "customerId": 5,
-                    "customer": "Rahul Sharma",
-                    "amount": 2500,
-                    "method": "ONLINE",
-                    "time": "5 min ago"
-                },
-                {
-                    "id": 11,
-                    "customerId": 7,
-                    "customer": "Anjali Verma",
-                    "amount": 1800,
-                    "method": "CASH",
-                    "time": "20 min ago"
-                }
-            ]
-        }
+            "todayDeliveries": today_deliveries,
+            "recentPayments": recent_payments,
+        },
     }
