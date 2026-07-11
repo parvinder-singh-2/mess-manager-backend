@@ -12,6 +12,7 @@ from models import Customer
 from models import Payment
 from models import MealTransaction
 from models import CustomerAccount
+import traceback
 
 router = APIRouter(
     prefix="/dashboard",
@@ -40,7 +41,7 @@ def get_dashboard(db: Session = Depends(get_db)):
 
         today_revenue = (
             db.query(func.coalesce(func.sum(Payment.amount), 0))
-            .func.date(MealTransaction.created_at) == today
+            .filter(func.date(Payment.created_at) == today)
             .scalar()
         )
 
@@ -87,10 +88,10 @@ def get_dashboard(db: Session = Depends(get_db)):
 
         meal_distribution_query = (
             db.query(
-                MealTransaction.meal_type,
+                MealTransaction.service_type,
                 func.count(MealTransaction.id),
             )
-            .group_by(MealTransaction.meal_type)
+            .group_by(MealTransaction.service_type)
             .all()
         )
 
@@ -144,7 +145,7 @@ def get_dashboard(db: Session = Depends(get_db)):
                 "customerId": delivery.customer.id,
                 "customer": delivery.customer.name,
                 "address": delivery.customer.address,
-                "meal": delivery.meal_type,
+                "meal": delivery.service_type,
                 "status": delivery.status,
             }
             for delivery in deliveries
