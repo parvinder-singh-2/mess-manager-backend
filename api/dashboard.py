@@ -1,19 +1,19 @@
 from datetime import date, timedelta
 
+from fastapi import APIRouter, Depends
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from database import get_db
+from schemas.dashboard import DashboardResponse
+
+# Import your models
 from models.customer import Customer
 from models.customer_account import CustomerAccount
 from models.payment import Payment
 from models.meal_transaction import MealTransaction
 from models.tiffin_transaction import TiffinTransaction
 
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-
-from database import get_db
-from schemas.dashboard import DashboardResponse
 
 router = APIRouter(
     prefix="/dashboard",
@@ -25,9 +25,9 @@ router = APIRouter(
 def get_dashboard(db: Session = Depends(get_db)):
     today = date.today()
 
-    # -------------------------
+    # ==========================================================
     # Stats
-    # -------------------------
+    # ==========================================================
 
     total_customers = db.query(Customer).count()
 
@@ -57,9 +57,9 @@ def get_dashboard(db: Session = Depends(get_db)):
         .scalar()
     )
 
-    # -------------------------
+    # ==========================================================
     # Revenue Chart (Last 7 Days)
-    # -------------------------
+    # ==========================================================
 
     revenue_chart = []
 
@@ -79,9 +79,9 @@ def get_dashboard(db: Session = Depends(get_db)):
             }
         )
 
-    # -------------------------
+    # ==========================================================
     # Meal Distribution
-    # -------------------------
+    # ==========================================================
 
     meal_distribution_query = (
         db.query(
@@ -100,9 +100,9 @@ def get_dashboard(db: Session = Depends(get_db)):
         for meal, count in meal_distribution_query
     ]
 
-    # -------------------------
+    # ==========================================================
     # Payment Methods
-    # -------------------------
+    # ==========================================================
 
     payment_methods_query = (
         db.query(
@@ -121,9 +121,9 @@ def get_dashboard(db: Session = Depends(get_db)):
         for method, amount in payment_methods_query
     ]
 
-    # -------------------------
+    # ==========================================================
     # Today's Deliveries
-    # -------------------------
+    # ==========================================================
 
     deliveries = (
         db.query(TiffinTransaction)
@@ -145,9 +145,9 @@ def get_dashboard(db: Session = Depends(get_db)):
         for delivery in deliveries
     ]
 
-    # -------------------------
+    # ==========================================================
     # Recent Payments
-    # -------------------------
+    # ==========================================================
 
     payments = (
         db.query(Payment)
@@ -169,9 +169,9 @@ def get_dashboard(db: Session = Depends(get_db)):
         for payment in payments
     ]
 
-    # -------------------------
+    # ==========================================================
     # Final Response
-    # -------------------------
+    # ==========================================================
 
     return {
         "stats": {
