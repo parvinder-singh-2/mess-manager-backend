@@ -8,12 +8,10 @@ from database import get_db
 from schemas.dashboard import DashboardResponse
 
 # Import your models
-from models.customer import Customer
-from models.customer_account import CustomerAccount
-from models.payment import Payment
-from models.meal_transaction import MealTransaction
-from models.tiffin_transaction import TiffinTransaction
-
+from models import Customer
+from models import Payment
+from models import MealTransaction
+from models import CustomerAccount
 
 router = APIRouter(
     prefix="/dashboard",
@@ -44,12 +42,12 @@ def get_dashboard(db: Session = Depends(get_db)):
     )
 
     pending_deliveries = (
-        db.query(TiffinTransaction)
-        .filter(
-            TiffinTransaction.delivery_date == today,
-            TiffinTransaction.status == "Pending",
-        )
-        .count()
+        # db.query(TiffinTransaction)
+        # .filter(
+        #     TiffinTransaction.delivery_date == today,
+        #     TiffinTransaction.status == "Pending",
+        # )
+        # .count()
     )
 
     outstanding_balance = (
@@ -126,11 +124,11 @@ def get_dashboard(db: Session = Depends(get_db)):
     # ==========================================================
 
     deliveries = (
-        db.query(TiffinTransaction)
-        .join(Customer)
-        .filter(TiffinTransaction.delivery_date == today)
-        .limit(10)
-        .all()
+        # db.query(TiffinTransaction)
+        # .join(Customer)
+        # .filter(TiffinTransaction.delivery_date == today)
+        # .limit(10)
+        # .all()
     )
 
     today_deliveries = [
