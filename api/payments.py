@@ -25,6 +25,21 @@ def create_payment(
             notes = payment.notes)
 
         db.add(new_payment)
+
+        account = (
+            db.query(models.CustomerAccount)
+            .filter(models.CustomerAccount.customer_id == payment.customer_id)
+            .first()
+        )
+
+        if not account:
+            raise HTTPException(
+                status_code=404,
+                detail="Customer account not found"
+            )
+
+        account.meal_balance += payment.meals_purchased
+
         db.commit()
         db.refresh(new_payment)
 

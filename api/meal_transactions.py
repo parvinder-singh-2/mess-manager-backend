@@ -30,7 +30,28 @@ def create_meal_transaction(
             is_delivered=meal_transaction.is_delivered,
         )
 
+        account = (
+            db.query(models.CustomerAccount)
+            .filter(models.CustomerAccount.customer_id == meal_transaction.customer_id)
+            .first()
+        )
+
+        if not account:
+            raise HTTPException(
+                status_code=404,
+                detail="Customer account not found"
+            )
+
+        if account.meal_balance < meal_transaction.quantity:
+            raise HTTPException(
+                status_code=400,
+                detail="Insufficient meal balance"
+            )
+
         db.add(new_transaction)
+
+        account.meal_balance -= meal_transaction.quantity
+
         db.commit()
         db.refresh(new_transaction)
 
