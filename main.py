@@ -8,6 +8,7 @@ from api.payments import router as payment_router
 from api.meal_transactions import router as meal_router
 from api.auth import router as auth_router
 from api.dashboard import router as dashboard_router
+from api.deliveries import router as delivery_router
 
 app = FastAPI()
 
@@ -31,6 +32,7 @@ app.include_router(payment_router)
 app.include_router(meal_router)
 app.include_router(auth_router)
 app.include_router(dashboard_router)
+app.include_router(delivery_router)
 
 
 @app.on_event("startup")

@@ -289,3 +289,4 @@ def delete_customer(
     db.commit()
 
     return {"message": "Customer deleted successfully"}
+    
