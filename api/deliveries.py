@@ -25,11 +25,11 @@ router = APIRouter(
 
 @router.get("/dashboard", response_model=DeliveryDashboardResponse)
 def get_delivery_dashboard(
-    date: date | None = None,
+    selected_date: date | None = None,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    target_date = date or date.now()
+    target_date = selected_date or date.now()
 
 
     records = (
