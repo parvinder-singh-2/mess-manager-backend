@@ -25,11 +25,12 @@ router = APIRouter(
 
 @router.get("/dashboard", response_model=DeliveryDashboardResponse)
 def get_delivery_dashboard(
+    date: date | None = None,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
+    target_date = date or date.now()
 
-    today = date.today()
 
     records = (
         db.query(models.MealTransaction, models.Customer)
@@ -38,7 +39,7 @@ def get_delivery_dashboard(
             models.MealTransaction.customer_id == models.Customer.id
         )
         .filter(
-            func.date(models.MealTransaction.created_at) == today
+            func.date(models.MealTransaction.created_at) == target_date
         )
         .all()
     )
