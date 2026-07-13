@@ -29,7 +29,8 @@ def get_delivery_dashboard(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    target_date = selected_date or date.now()
+
+    target_date = selected_date or date.today()
 
 
     records = (
