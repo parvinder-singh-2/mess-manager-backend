@@ -52,7 +52,7 @@ def create_meal_transaction(
 
         account.meal_balance -= meal_transaction.quantity
         
-        if meal_transaction.meal_rate == "LUNCH":
+        if meal_transaction.meal_type == "LUNCH":
             account.lunch_quantity += meal_transaction.quantity
         else:
             account.dinner_quantity += meal_transaction.quantity
